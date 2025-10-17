@@ -370,13 +370,16 @@ static int _modbus_rtu_check_integrity(modbus_t *ctx, uint8_t *msg, const int ms
         return -1;
     }
 
-    /* Filter on the Modbus unit identifier (slave) in RTU mode */
-    if (slave != ctx->slave && slave != MODBUS_BROADCAST_ADDRESS) {
-        if (ctx->debug) {
-            printf("Request for slave %d ignored (not %d)\n", slave, ctx->slave);
+    /* If gateway quirk is enabled, allow messages that do not match configured slave address */
+    if(!(ctx->quirks & MODBUS_QUIRK_RTU_GATEWAY)) {
+        /* Filter on the Modbus unit identifier (slave) in RTU mode */
+        if (slave != ctx->slave && slave != MODBUS_BROADCAST_ADDRESS) {
+            if (ctx->debug) {
+                printf("Request for slave %d ignored (not %d)\n", slave, ctx->slave);
+            }
+            /* Following call to check_confirmation handles this error */
+            return 0;
         }
-        /* Following call to check_confirmation handles this error */
-        return 0;
     }
 
     return msg_length;
